@@ -1,0 +1,19 @@
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# Database
+backend/signature.db
+
+# Node
+frontend/node_modules/
+
+# Environment files
+.env
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
