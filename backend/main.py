@@ -8,6 +8,9 @@ from models.document import Document
 from routers.auth import router as auth_router
 from routers.document import router as document_router
 
+from models.signature import Signature
+from routers.signature import router as signature_router
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -32,3 +35,8 @@ def home():
         "message": "Document Signature App API Running"
     }
 
+app.include_router(
+    signature_router,
+    prefix="/api/signatures",
+    tags=["Signatures"]
+)
