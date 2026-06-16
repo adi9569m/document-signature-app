@@ -5,6 +5,8 @@ import os
 
 from database import get_db
 from models.document import Document
+from models.user import User
+from utils.auth import get_current_user
 
 router = APIRouter()
 
@@ -12,6 +14,7 @@ router = APIRouter()
 @router.post("/upload")
 def upload_document(
     file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -19,6 +22,10 @@ def upload_document(
         return {
             "message": "Only PDF files allowed"
         }
+
+    user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
 
     os.makedirs("uploads", exist_ok=True)
 
@@ -33,7 +40,7 @@ def upload_document(
     document = Document(
         filename=file.filename,
         filepath=file_path,
-        uploaded_by=1
+        uploaded_by=user.id
     )
 
     db.add(document)
@@ -42,7 +49,8 @@ def upload_document(
 
     return {
         "message": "PDF uploaded successfully",
-        "document_id": document.id
+        "document_id": document.id,
+        "uploaded_by": user.id
     }
 
 
@@ -56,9 +64,27 @@ def get_all_documents(
     return documents
 
 
+@router.get("/my-documents")
+def get_my_documents(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
+
+    documents = db.query(Document).filter(
+        Document.uploaded_by == user.id
+    ).all()
+
+    return documents
+
+
 @router.get("/{document_id}")
 def get_document(
     document_id: int,
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -69,6 +95,15 @@ def get_document(
     if not document:
         return {
             "message": "Document not found"
+        }
+
+    user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
+
+    if document.uploaded_by != user.id:
+        return {
+            "message": "Access denied"
         }
 
     return document
