@@ -181,3 +181,21 @@ def download_signed_pdf(
         filename=f"signed_{document.filename}",
         media_type="application/pdf"
     )
+
+@router.delete("/{signature_id}")
+def delete_signature(
+    signature_id: int,
+    db: Session = Depends(get_db)
+):
+
+    signature = db.query(Signature).filter(
+        Signature.id == signature_id
+    ).first()
+
+    if not signature:
+        return {"message": "Signature not found"}
+
+    db.delete(signature)
+    db.commit()
+
+    return {"message": "Signature deleted successfully"}

@@ -107,3 +107,32 @@ def get_document(
         }
 
     return document
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        return {"message": "Document not found"}
+
+    user = db.query(User).filter(
+        User.email == current_user["sub"]
+    ).first()
+
+    if document.uploaded_by != user.id:
+        return {"message": "Access denied"}
+
+    if os.path.exists(document.filepath):
+        os.remove(document.filepath)
+
+    db.delete(document)
+    db.commit()
+
+    return {"message": "Document deleted successfully"}
